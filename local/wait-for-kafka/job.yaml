@@ -1,0 +1,19 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: wait-for-kafka
+  namespace: settlements-payments-system
+spec:
+  template:
+    spec:
+      containers:
+        - name: wait-for-kafka
+          image: localhost:35000/wait-for-kafka:latest
+          env:
+            - name: KAFKA_ENDPOINT
+              value: kafka-headless.default.svc.cluster.local
+            - name: KAFKA_TOPICS_UNPROCESSED_PAYMENTS
+              value: settlements-isb-service-unprocessed-payments
+            - name: KAFKA_TOPICS_PAYMENT_STATE_UPDATES
+              value: settlements-payments-system-payment-state-updates
+      restartPolicy: Never

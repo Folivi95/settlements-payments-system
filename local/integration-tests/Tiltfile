@@ -1,0 +1,4 @@
+INT_JOB_RESOURCES = ["integration-tests"]
+
+k8s_yaml("job.yaml")
+k8s_resource("integration-tests", labels=["tests"])

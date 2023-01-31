@@ -1,0 +1,19 @@
+load("ext://helm_remote", "helm_remote")
+
+LOCALSTACK_RESOURCE=["localstack"]
+
+# Postgres: https://artifacthub.io/packages/helm/bitnami/postgresql
+helm_remote(
+    "localstack",
+    repo_name="localstack-charts",
+    repo_url="https://localstack.github.io/helm-charts",
+    namespace="settlements-payments-system",
+    release_name="localstack",
+    values=["values.yaml"],
+    set = [
+    "ingress.hosts[0].host=localstack.settlements-payments-system.svc.cluster.local",
+    ],
+    version="0.4.1" # chart version
+)
+
+k8s_resource("localstack", port_forwards='4566', labels=["dependencies"], trigger_mode=TRIGGER_MODE_MANUAL)

@@ -1,0 +1,58 @@
+helm:
+  chart: settlements-payments-system
+  version: 1.0.89
+  values: |
+    deployment:
+      image:
+        {{- with .ContainerImages.GetContainerImageByProvenance "push" }}
+        repository: {{ .Registry }}
+        tag: {{ index .Tags 0 }}@{{ .Digest }}
+        {{- end }}
+      replicaCount: 3
+    otelExporterEndpoint: tempo.tracing.svc:4317
+  overrides:
+    - region: eu-west-1
+      scope: platform
+      environment: dev
+      values: |
+        env:
+          environment: "integration_gp"
+        alerting:
+          grafanaUrl: https://o11y-frontend-grafana.platform-dev.eu-west-1.salt/
+        e2eTests:
+          repository: 011034701064.dkr.ecr.eu-west-1.amazonaws.com/payments-e2e-tests
+          url_payments_system: "https://settlements-payments-system.platform-dev.eu-west-1.salt"
+          payments_system_bearer_token: "vmfuawjmnXkBiPRCQxsiDbWFqjPww4PnUaMgyyiL"
+          perfTests:
+            tag: perf-test-latest
+          systemTests:
+            tag: system-test-latest
+        deployment:
+          blackBoxTests:
+            {{- with .ContainerImages.GetContainerImageByProvenance "push-black-box-tests" }}
+            repository: {{ .Registry }}
+            tag: {{ index .Tags 0 }}@{{ .Digest }}
+            {{- end }}
+            env:
+              baseUrl: "https://settlements-payments-system.platform-dev.eu-west-1.salt"
+              testBearerToken: "vmfuawjmnXkBiPRCQxsiDbWFqjPww4PnUaMgyyiL"
+              kafkaTopic: "settlements-payments-system-transactions"
+              paymentStateUpdateKafkaTopic: "settlements-payments-system-payment-state-updates"
+              skip_e2e_tests: "false"
+              url_acquiring: "https://acquiring-settlements-service.platform-dev.eu-west-1.salt"
+              acquiring_bearer_token: "dummyAuthToken"
+    - region: eu-west-1
+      scope: platform
+      environment: prd
+      values: |
+        env:
+         environment: "production_gp"
+         service: "settlements-payments-system"
+        alerting:
+          grafanaUrl: https://o11y-frontend-grafana.platform-prd.eu-west-1.salt/
+        e2eTests:
+          repository: 011034701064.dkr.ecr.eu-west-1.amazonaws.com/payments-e2e-tests
+          url_payments_system: "https://settlements-payments-system.platform-prd.eu-west-1.salt"
+          prodTests:
+            schedule: "0 16 * * 1-5"
+            tag: prod-tests-latest

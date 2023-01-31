@@ -1,0 +1,14 @@
+{{- if .Values.serviceMonitor.enabled -}}
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: {{ default "settlements-payments-system" .Values.service.name }}
+spec:
+  endpoints:
+    - interval: {{ .Values.serviceMonitor.interval }}
+      port: http
+      path: /metrics
+  selector:
+    matchLabels:
+      {{- include "settlements-payments-system.selectorLabels" . | nindent 6 }}
+{{- end }}

@@ -1,0 +1,20 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: integration-tests
+  namespace: settlements-payments-system
+spec:
+  template:
+    spec:
+      containers:
+        - name: integration-tests
+          image: localhost:35000/tests-payments-system:latest
+          env:
+            - name: POSTGRES_DB_CONNECTION_STRING
+              value: postgres://postgres:somePassword@postgresql-hl.settlements-payments-system.svc.cluster.local:5432/postgres?sslmode=disable
+            - name: FAKE_BC_BASE_URL
+              value: http://settlements-fake-providers.settlements-fake-providers.svc.cluster.local:8080/bankingcircle/v1
+            - name: ENV_NAME
+              value: tilt
+          command: [ "/bin/sh", "-c", "go test -count=1 -v -tags=integration ./..." ]
+      restartPolicy: Never

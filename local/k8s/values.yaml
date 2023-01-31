@@ -1,0 +1,12 @@
+env:
+  environment: tilt
+
+deployment:
+  image:
+    repository: localhost:35000/settlements-payments-system
+    tag: ''
+
+KINESIS_STREAM_SHARDS: '1'
+KINESIS_ERROR_PROBABILITY: '0.0'
+KINESIS_STREAM_NAME: 'my-stream'
+KINESIS_PROVIDER: 'kinesalite'

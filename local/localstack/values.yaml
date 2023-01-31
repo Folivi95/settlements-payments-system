@@ -1,0 +1,8 @@
+# hard to set this using --set in helm therefore using a file
+
+image:
+  tag: '1.1.0'
+livenessProbe:
+  initialDelaySeconds: 45
+readinessProbe:
+  initialDelaySeconds: 45

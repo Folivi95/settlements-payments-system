@@ -1,0 +1,42 @@
+# Default values for settlements-payments-system.
+fullnameOverride: settlements-payments-system
+
+replicaCount: 1
+
+serviceAccount:
+  create: false
+  name: settlements-payments-system
+
+service:
+  type: ClusterIP
+  port: 8080
+  health:
+    live: /health_check
+    ready: /health_check
+
+serviceMonitor:
+  enabled: true
+  interval: 30s
+
+alerts:
+  AnyError:
+    threshold: 0
+
+ingress: { }
+
+hpa: { }
+
+resources:
+  limits:
+    cpu: 300m
+    memory: 640Mi
+  requests:
+    cpu: 100m
+    memory: 256Mi
+
+
+autoscaling: { }
+
+pdb:
+  enabled: true
+  maxUnavailable: 1

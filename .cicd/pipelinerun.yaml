@@ -1,0 +1,286 @@
+apiVersion: tekton.dev/v1beta1
+kind: PipelineRun
+metadata:
+  name: settlements-payments-system
+  labels:
+    team: roadrunner
+spec:
+  serviceAccountNames:
+    - taskName: push
+      serviceAccountName: cicd
+    - taskName: restore-cache
+      serviceAccountName: cicd
+    - taskName: save-cache
+      serviceAccountName: cicd
+    - taskName: push-helm-chart
+      serviceAccountName: cicd
+  workspaces:
+    - name: workspace
+      volumeClaimTemplate:
+        spec:
+          accessModes:
+            - ReadWriteOnce
+          resources:
+            requests:
+              storage: 100Mi
+  pipelineSpec:
+    workspaces:
+      - name: workspace
+    tasks:
+      # Clone the source repo
+      - name: git-clone
+        taskRef:
+          name: git-clone
+          kind: ClusterTask
+        params:
+          - name: url
+            value: $(params.gitrepositoryurl)
+          - name: subdirectory
+            value: src
+          - name: revision
+            value: $(params.headsha)
+        workspaces:
+          - name: output
+            workspace: workspace
+      # runs linting against the service
+      - name: linting
+        runAfter:
+          - vendor
+        workspaces:
+          - name: shared
+            workspace: workspace
+        taskSpec:
+          workspaces:
+            - name: shared
+          steps:
+            - name: linting
+              image: 011034701064.dkr.ecr.eu-west-1.amazonaws.com/infra-cicd-images:go-golanci-lint-latest
+              env:
+                - name: GOPATH
+                  value: $(workspaces.shared.path)/go
+              script: |
+                mkdir -p ${GOPATH}
+                cd $(workspaces.shared.path)/src
+                golangci-lint run --timeout=10m
+        params: []
+      # runs unit tests
+      - name: unit-tests
+        runAfter:
+          - vendor
+        workspaces:
+          - name: shared
+            workspace: workspace
+        taskSpec:
+          workspaces:
+            - name: shared
+          steps:
+            - name: unit-tests
+              image: public.ecr.aws/docker/library/golang
+              env:
+                - name: GOPATH
+                  value: $(workspaces.shared.path)/go
+              script: |
+                mkdir -p ${GOPATH}
+                cd $(workspaces.shared.path)/src
+                bash ./scripts/local-run-unit-tests.sh
+        params: []
+      # runs integration-tests against the service
+      - name: integration-tests
+        runAfter:
+          - vendor
+        workspaces:
+          - name: shared
+            workspace: workspace
+        taskSpec:
+          workspaces:
+            - name: shared
+          steps:
+            - name: integration-tests
+              image: public.ecr.aws/docker/library/golang
+              env:
+                - name: GOPATH
+                  value: $(workspaces.shared.path)/go
+                - name: ENV_NAME
+                  value: infra_pipeline
+                - name: FAKE_BC_BASE_URL
+                  value: https://settlements-fake-providers.platform-dev.eu-west-1.salt/bankingcircle/v1
+                - name: POSTGRES_DB_CONNECTION_STRING
+                  value: postgres://postgres:password@localhost:5432?sslmode=disable
+              script: |
+                # Prepare the env to to be able to build the service and run tests
+                mkdir -p ${GOPATH}
+                cd $(workspaces.shared.path)/src
+                bash ./scripts/local-run-integration-tests.sh
+          sidecars:
+            - name: zookeeper
+              image: confluentinc/cp-zookeeper:6.2.0
+              env:
+                - name: ZOOKEEPER_CLIENT_PORT
+                  value: "32181"
+                - name: ZOOKEEPER_TICK_TIME
+                  value: "2000"
+            - name: kafka
+              image: confluentinc/cp-kafka:6.2.0
+              env:
+                - name: KAFKA_BROKER_ID
+                  value: "1"
+                - name: KAFKA_ZOOKEEPER_CONNECT
+                  value: "localhost:32181"
+                - name: KAFKA_LISTENER_SECURITY_PROTOCOL_MAP
+                  value: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+                - name: KAFKA_ADVERTISED_LISTENERS
+                  value: PLAINTEXT://localhost:29092,PLAINTEXT_HOST://localhost:9092
+                - name: KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS
+                  value: "0"
+                - name: KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR
+                  value: "1"
+                - name: KAFKA_TRANSACTION_STATE_LOG_MIN_ISR
+                  value: "1"
+                - name: KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR
+                  value: "1"
+                - name: KAFKA_AUTO_CREATE_TOPICS_ENABLE
+                  value: "true"
+            - name: localstack
+              image: localstack/localstack:0.12.16
+              env:
+                - name: SERVICES
+                  value: sqs,s3,secretsmanager
+            - name: postgres
+              image: postgres:11
+              env:
+                - name: POSTGRES_USER
+                  value: postgres
+                - name: POSTGRES_PASSWORD
+                  value: password
+                - name: POSTGRES_DB
+                  value: settlements_payments
+                - name: POSTGRES_HOST_AUTH_METHOD
+                  value: trust
+              readinessProbe:
+                periodSeconds: 1
+                exec:
+                  command: ["/bin/sh", "-c", "-e", "exec", "pg_isready", "-U", '"postgres"', "-h", "127.0.0.1", "-p", "5432"]
+        params: []
+      # vendoring dependencies in the current workspace
+      - name: vendor
+        runAfter:
+          - git-clone
+        workspaces:
+          - name: shared
+            workspace: workspace
+        taskSpec:
+          workspaces:
+            - name: shared
+          steps:
+            - name: vendor
+              image: public.ecr.aws/docker/library/golang
+              env:
+                - name: GOPATH
+                  value: $(workspaces.shared.path)/go
+              script: |
+                mkdir -p ${GOPATH}
+                cd $(workspaces.shared.path)/src
+                go mod vendor
+        params: []
+      # push picks up the docker image in the repo and builds it
+      - name: push
+        when:
+          - input: $(params.headref)
+            operator: in
+            values: ["main"]
+        taskRef:
+          name: build-push-image-v2
+          kind: ClusterTask
+        runAfter:
+          - integration-tests
+          - unit-tests
+          - linting
+        workspaces:
+          - name: shared
+            workspace: workspace
+        params:
+          - name: imagename
+            value: settlements-payments-system
+          - name: tags
+            value:
+              - $(params.headsha)
+              - $(params.headref)
+          - name: contextpath
+            value: $(workspaces.shared.path)/src/
+          - name: cache-layers
+            value: "true"
+      - name: push-black-box-tests
+        when:
+          - input: $(params.headref)
+            operator: in
+            values: ["main"]
+        taskRef:
+          name: build-push-image-v2
+          kind: ClusterTask
+        runAfter:
+          - integration-tests
+          - unit-tests
+          - linting
+        workspaces:
+          - name: shared
+            workspace: workspace
+        params:
+          - name: imagename
+            value: settlements-payments-system
+          - name: tags
+            value:
+              - black-box-$(params.headsha)
+              - black-box-$(params.headref)
+          - name: contextpath
+            value: $(workspaces.shared.path)/src/
+          - name: dockerfilepath
+            value: $(workspaces.shared.path)/src/black-box-tests/Dockerfile
+      # Package and push Helm chart
+      - name: push-helm-chart
+        when:
+          - input: $(params.headref)
+            operator: in
+            values: ["main"]
+        runAfter:
+          - integration-tests
+        taskRef:
+          name: helm-generate-and-push
+          kind: ClusterTask
+        workspaces:
+          - name: shared
+            workspace: workspace
+        params:
+          - name: chart-name
+            value: settlements-payments-system
+          - name: chart-version
+            value: '1.0.89'
+          - name: push
+            value: "true"
+          - name: chart-location
+            value: chart/
+          - name: repo_dir
+            value: src/
+          - name: lint
+            value: 'true'
+      # Package and push Helm chart
+      - name: deploy
+        when:
+          - input: $(params.headref)
+            operator: in
+            values: ["main"]
+        runAfter:
+          - push-helm-chart
+          - push
+        taskRef:
+          name: deploy-app
+          kind: ClusterTask
+        params:
+          - name: tagname
+            value: $(params.headsha)
+          - name: git-clone-url
+            value: $(params.gitrepositoryurl)
+          - name: release-target
+            value: $(params.headsha)
+          # TODO: When we have multiple envs we probably want to enable this.
+          - name: rolling-deploy
+            value: "true"

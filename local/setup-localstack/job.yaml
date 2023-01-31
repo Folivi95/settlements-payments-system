@@ -1,0 +1,45 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: setup-local-aws
+  namespace: settlements-payments-system
+spec:
+  template:
+    spec:
+      containers:
+        - name: setup-local-aws
+          image: localhost:35000/setup-local-aws:latest
+          env:
+            - name: AWS_ACCESS_KEY_ID
+              value: local
+            - name: AWS_SECRET_ACCESS_KEY
+              value: local
+            - name: AWS_ENDPOINT
+              value: localstack.settlements-payments-system.svc.cluster.local:4566
+            - name: NETWORKING_CHECK_ADDRESS
+              value: localstack.settlements-payments-system.svc.cluster.local:4566
+            - name: AWS_REGION
+              value: eu-west-1
+            - name: SQS_UFX_FILE_NOTIFICATION_QUEUE_NAME
+              value: local-settlements-payments-bulk-ufx-payment-files
+            - name:  SQS_UFX_FILE_NOTIFICATION_DLQ_NAME
+              value: local-settlements-payments-bulk-ufx-payment-files-deadletter
+            - name: SQS_BANKING_CIRCLE_UNPROCESSED_QUEUE_NAME
+              value: local-banking-circle-unprocessed-payment-requests
+            - name: SQS_BANKING_CIRCLE_UNPROCESSED_DLQ_NAME
+              value: local-banking-circle-unprocessed-payment-requests-deadletter
+            - name: SQS_BANKING_CIRCLE_PROCESSED_QUEUE_NAME
+              value: local-banking-circle-processed-payment-requests
+            - name: SQS_BANKING_CIRCLE_PROCESSED_DLQ_NAME
+              value: local-banking-circle-processed-payment-requests-deadletter
+            - name: SQS_BANKING_CIRCLE_UNCHECKED_QUEUE_NAME
+              value: local-banking-circle-unchecked-payments
+            - name: SQS_BANKING_CIRCLE_UNCHECKED_DLQ_NAME
+              value: local-banking-circle-unchecked-payments-deadletter
+            - name: SQS_ISLANDSBANKI_UNPROCESSED_QUEUE_NAME
+              value: local-islandsbanki-unprocessed-payments
+            - name: SQS_ISLANDSBANKI_UNPROCESSED_DLQ_NAME
+              value: local-islandsbanki-unprocessed-payments-deadletter
+            - name: S3_UFX_PAYMENT_FILES_BUCKET_NAME
+              value: my-bucket
+      restartPolicy: OnFailure

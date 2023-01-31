@@ -1,0 +1,7 @@
+load("../kafka/Tiltfile", "KAFKA_RESOURCES")
+
+KAFKA_CLIENT_RESOURCE = ["kafka-client"]
+
+# deploy a kafka client to interact with kafka on the cluster
+k8s_yaml("deployment.yaml", allow_duplicates=True)
+k8s_resource("kafka-client", labels=["kafka-client"], resource_deps=KAFKA_RESOURCES)

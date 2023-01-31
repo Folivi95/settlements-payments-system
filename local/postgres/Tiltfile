@@ -1,0 +1,20 @@
+load("ext://helm_remote", "helm_remote")
+
+POSTGRES_RESOURCE=["postgresql"]
+
+# Postgres: https://artifacthub.io/packages/helm/bitnami/postgresql
+helm_remote(
+    "postgresql",
+    repo_name="bitnami",
+    repo_url="https://charts.bitnami.com/bitnami",
+    namespace="settlements-payments-system",
+    release_name="postgresql",
+    set=[
+        "auth.username=postgres",
+        "auth.postgresPassword=somePassword",
+        "auth.database=postgres_test"
+    ],
+    version="11.2.1" # chart version
+)
+
+k8s_resource("postgresql", port_forwards='5432', labels=["dependencies"], trigger_mode=TRIGGER_MODE_MANUAL)

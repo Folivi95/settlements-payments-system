@@ -1,0 +1,32 @@
+{{- if .Values.e2eTests }}
+{{- if .Values.e2eTests.perfTests }}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: settlements-payments-system-perf-tests
+  labels:
+    {{- include "settlements-payments-system.labels" . | nindent 4 }}
+  annotations:
+    argocd.argoproj.io/hook: PostSync
+    argocd.argoproj.io/hook-delete-policy: before-hook-creation
+spec:
+  backoffLimit: 0
+  template:
+    metadata:
+      name: "settlements-payments-system-perf-tests"
+      labels:
+        {{- include "settlements-payments-system.labels" . | nindent 8 }}
+    spec:
+      serviceAccountName: {{ include "settlements-payments-system.serviceAccountName" . }}
+      restartPolicy: Never
+      containers:
+        - name: e2e-tests
+          image: "{{ .Values.e2eTests.repository }}:{{ .Values.e2eTests.perfTests.tag }}"
+          imagePullPolicy: Always
+          env:
+            - name: BASE_URL_PAYMENTS_SYSTEM
+              value: "{{ .Values.e2eTests.url_payments_system }}"
+            - name: BEARER_TOKEN_PAYMENTS_SYSTEM
+              value: "{{ .Values.e2eTests.payments_system_bearer_token }}"
+{{- end }}
+{{- end }}

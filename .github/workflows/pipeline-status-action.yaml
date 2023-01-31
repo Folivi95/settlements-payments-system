@@ -1,0 +1,14 @@
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  report-failed-commits:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check pipeline statuses
+        uses: tamj0rd2/pipeline-status-action@v1.1.0
+        with:
+          checkNames: pipegen,ci,deploy-platform-dev,deploy-platform-prd
+          slackWebhookURL: ${{ secrets.SLACK_URL }}

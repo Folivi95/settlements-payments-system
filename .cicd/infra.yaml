@@ -1,0 +1,141 @@
+databases:
+  - name: "cluster"
+    database: "settlements_payments"
+    database_type: "aurora-postgresql"
+    database_version: "12.8"
+    main_user: "postgres"
+    instance_type: "db.t3.medium"
+    instance_count: 1
+    instance_apply_immediately: true
+    overrides:
+      - scope: platform
+        environment: prd
+        region: eu-west-1
+        instance_count: 2
+        instance_type: "db.r5.large"
+
+s3_buckets:
+  - name: payments-bucket-payment-files
+    permissions:
+      - prefix: /
+        read: true
+        write: true
+    queues:
+      - sqs_queue_ref: "way4-ufx-file-events"
+        events:
+          - s3:ObjectCreated:*
+    overrides:
+      - environment: prd
+        scope: platform
+        name: payments-bucket-payment-files-prd
+        region: eu-west-1
+
+sqs:
+  - name: "way4-ufx-file-events"
+    message_retention: 1209600
+    receive_wait: 5
+    dead_queue_ref: "way4-ufx-file-events-deadletter"
+    dead_queue_maxreceive: 3
+
+  - name: "way4-ufx-file-events-deadletter"
+    message_retention: 1209600
+    receive_wait: 5
+
+  - name: "banking-circle-unchecked-payments"
+    message_retention: 1209600
+    receive_wait: 5
+    delay_seconds: 5
+    dead_queue_ref: "banking-circle-unchecked-payments-deadletter"
+    dead_queue_maxreceive: 3
+    overrides:
+      - scope: platform
+        environment: prd
+        region: eu-west-1
+        delay_seconds: 300
+
+  - name: "banking-circle-unchecked-payments-deadletter"
+    message_retention: 1209600
+    receive_wait: 5
+
+  - name: "banking-circle-unprocessed-payments"
+    message_retention: 1209600
+    receive_wait: 5
+    dead_queue_ref: "banking-circle-unprocessed-payments-deadletter"
+    dead_queue_maxreceive: 3
+
+  - name: "banking-circle-unprocessed-payments-deadletter"
+    message_retention: 1209600
+    receive_wait: 5
+
+  - name: "banking-circle-processed-payments"
+    message_retention: 1209600
+    receive_wait: 5
+    dead_queue_ref: "banking-circle-processed-payments-deadletter"
+    dead_queue_maxreceive: 3
+
+  - name: "banking-circle-processed-payments-deadletter"
+    message_retention: 1209600
+    receive_wait: 5
+
+kafka:
+  - cluster: eventstreaming
+    topics:
+      - name: transactions
+        partitions: 1
+        replication_factor: 3
+        consumers:
+          - name: settlements-payments-system
+            scope: platform
+        producers:
+          - name: acquiring-settlements-service
+            scope: platform
+
+        overrides:
+          - environment: dev
+            scope: platform
+            region: eu-west-1
+            consumers:
+              - name: settlements-payments-system
+                scope: platform
+              - name: saltdata-platform-kowl
+                scope: platform
+
+      - name: transactions-updates
+        partitions: 1
+        replication_factor: 3
+        consumers:
+          - name: acquiring-settlements-service
+            scope: platform
+        producers:
+          - name: settlements-payments-system
+            scope: platform
+
+        overrides:
+          - environment: dev
+            scope: platform
+            region: eu-west-1
+            consumers:
+              - name: acquiring-settlements-service
+                scope: platform
+              - name: saltdata-platform-kowl
+                scope: platform
+
+      - name: payment-state-updates
+        partitions: 1
+        replication_factor: 3
+        consumers:
+          - name: settlements-payments-system
+            scope: platform
+        producers:
+          - name: settlements-isb-service
+            scope: platform
+
+        overrides:
+          - environment: dev
+            scope: platform
+            region: eu-west-1
+            consumers:
+              - name: settlements-payments-system
+                scope: platform
+              - name: saltdata-platform-kowl
+                scope: platform

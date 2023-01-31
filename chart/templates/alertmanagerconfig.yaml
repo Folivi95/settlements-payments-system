@@ -1,0 +1,23 @@
+apiVersion: monitoring.coreos.com/v1alpha1
+kind: AlertmanagerConfig
+metadata:
+  name: {{ .Values.serviceAccount.name }}
+  namespace: "settlements-payments"
+spec:
+  receivers:
+    - name: blackhole
+    - name: slack
+      slackConfigs:
+        - apiURL:
+            name: settlements-payments-system-slack-app
+            key: slack_uri
+  route:
+    receiver: blackhole
+    routes:
+      - receiver: slack
+        groupBy:
+          - alertname
+          - tki
+        matchers:
+          - name: tki
+            value: {{ .Values.serviceAccount.name }}

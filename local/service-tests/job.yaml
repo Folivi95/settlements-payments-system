@@ -1,0 +1,34 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: service-tests
+  namespace: settlements-payments-system
+spec:
+  template:
+    spec:
+      containers:
+        - name: service-tests
+          image: localhost:35000/tests-payments-system:latest
+          env:
+            - name: POSTGRES_DB_CONNECTION_STRING
+              value: postgres://postgres:somePassword@postgresql-hl.settlements-payments-system.svc.cluster.local:5432/postgres?sslmode=disable
+            - name: ENV_NAME
+              value: local
+            - name: KAFKA_ENDPOINT
+              value: kafka-headless.default.svc.cluster.local
+            - name: BASE_URL
+              value: http://settlements-payments-system.settlements-payments-system.svc.cluster.local:8080
+            - name: KAFKA_TOPICS_PAYMENT_STATE_UPDATES
+              value: settlements-payments-system-payment-state-updates
+            - name: KAFKA_TOPICS_ACQUIRING_HOST_TRANSACTION_UPDATES
+              value: settlements-payments-system-acquiring-host-transactions
+            - name: KAFKA_TOPICS_TRANSACTIONS
+              value: settlements-payments-system-transactions
+            - name: KAFKA_TOPICS_UNPROCESSED_ISB_PAYMENTS
+              value: settlements-isb-service-unprocessed-payments
+            - name: TEST_BEARER_TOKEN
+              value: oy8DqTrhVJb5yQq9wi58R8JJK5CT2SsjCdVNKckx
+            - name: MOCK_ISB_SERVICE
+              value: "true"
+          command: [ "/bin/sh", "-c", "go test -count=1 -v --tags=blackbox_failure,blackbox_success ./..." ]
+      restartPolicy: Never

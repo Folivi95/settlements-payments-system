@@ -1,0 +1,32 @@
+{{- if .Values.e2eTests }}
+{{- if .Values.e2eTests.prodTests }}
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: e2e-prod-test
+  labels:
+    {{- include "settlements-payments-system.labels" . | nindent 4 }}
+spec:
+  schedule: {{ .Values.e2eTests.prodTests.schedule }}
+  successfulJobsHistoryLimit: 2
+  failedJobsHistoryLimit: 2
+  jobTemplate:
+    spec:
+      backoffLimit: 0
+      template:
+        spec:
+          containers:
+            - name: e2e-prod-test-job
+              image: "{{ .Values.e2eTests.repository }}:{{ .Values.e2eTests.prodTests.tag }}"
+              imagePullPolicy: IfNotPresent
+              env:
+                - name: BASE_URL_PAYMENTS_SYSTEM
+                  value: "{{ .Values.e2eTests.url_payments_system }}"
+                - name: BEARER_TOKEN_PAYMENTS_SYSTEM
+                  valueFrom:
+                    secretKeyRef:
+                      name: settlements-payments-system-payments-system-e2e-token
+                      key: token
+          restartPolicy: Never
+{{- end }}
+{{- end }}

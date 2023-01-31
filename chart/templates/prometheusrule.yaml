@@ -1,0 +1,103 @@
+{{- if .Values.serviceMonitor.enabled -}}
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: {{ default "settlements-payments-system" .Values.serviceAccount.name }}
+  namespace: "settlements-payments"
+spec:
+  groups:
+    - name: alerts
+      rules:
+        - alert: SettlementsPaymentsSystemErrorMissingFunds
+          annotations:
+            message: >-
+              Not enough funds to proceed with payments for currency
+          expr: |
+            sum by (currency) (irate(app_settlements_provider_missing_account_funds{service="settlements-payments-system"}[2m])) > {{ .Values.alerts.AnyError.threshold }}
+          labels:
+            team: settlements
+            severity: error
+        - alert: SettlementsPaymentsSystemErrorMissingFundsForPayment
+          annotations:
+            message: >-
+              Not enough funds to proceed with the requested payment for currency
+          expr: |
+            sum by (currency) (irate(app_settlements_provider_missing_funds{service="settlements-payments-system"}[2m])) > {{ .Values.alerts.AnyError.threshold }}
+          labels:
+            team: settlements
+            severity: error
+        - alert: SettlementsPaymentsSystemErrorE2EFail
+          annotations:
+            message: >-
+              E2E test on prod failed. See the error logs for the last hour
+              {{ .Values.alerting.grafanaUrl }}explore?orgId=1&left=%7B%22datasource%22:%22LOKI-0389CE917764%22,%22queries%22:%5B%7B%22expr%22:%22%7Bnamespace%3D%5C%22settlements-payments%5C%22,%20job_name%3D~%5C%22e2e-prod-test.%2A%5C%22%7D%22,%22refId%22:%22A%22,%22range%22:true,%22editorMode%22:%22code%22,%22queryType%22:%22range%22%7D%5D,%22range%22:%7B%22from%22:%22now-1h%22,%22to%22:%22now%22%7D%7D
+          expr: |
+            kube_job_failed{job_name=~"e2e-prod-test.*",condition="true"} > 0
+          labels:
+            team: settlements
+            severity: error
+        - alert: SettlementsPaymentsSystemErrorMissingFundsUsingLoan
+          annotations:
+            message: >-
+              Not enough funds to proceed with payments for currency using loan
+          expr: |
+            sum by (currency) (irate(app_settlements_provider_missing_account_funds_using_loan{service="settlements-payments-system"}[2m])) > {{ .Values.alerts.AnyError.threshold }}
+          labels:
+            team: settlements
+            severity: error
+        - alert: SettlementsPaymentsSystemErrorLogsFound
+          annotations:
+            message: >-
+               Error found on log stream
+          expr: |
+            sum by (service, namespace) (rate(app_error_log_entries {container="settlements-payments-system"}[2m])) > {{ .Values.alerts.AnyError.threshold }}
+          labels:
+            tki: {{ .Values.serviceAccount.name }}
+            team: settlements
+            severity: error
+        - alert: BankingCircleProcessedDlqAlert
+          annotations:
+            message: >-
+              Banking Circle Processed DLQ has messages waiting to be dealt with
+          expr: |
+            sum by (service, namespace) (irate(aws_sqs_approximate_number_of_messages_visible_maximum{queue_name="settlements-payments-system-banking-circle-processed-payments-deadletter"}[2m])) > {{ .Values.alerts.AnyError.threshold }}
+          labels:
+            team: settlements
+            severity: error
+        - alert: BankingCircleUncheckedDlqAlert
+          annotations:
+            message: >-
+              Banking Circle Unchecked DLQ has messages waiting to be dealt with
+          expr: |
+            sum by (service, namespace) (irate(aws_sqs_approximate_number_of_messages_visible_maximum{queue_name="settlements-payments-system-banking-circle-unchecked-payments-deadletter"}[2m])) > {{ .Values.alerts.AnyError.threshold }}
+          labels:
+            team: settlements
+            severity: error
+        - alert: BankingCircleUnprocessedDlqAlert
+          annotations:
+            message: >-
+              Banking Circle Unprocessed DLQ has messages waiting to be dealt with
+          expr: |
+            sum by (service, namespace) (irate(aws_sqs_approximate_number_of_messages_visible_maximum{queue_name="settlements-payments-system-banking-circle-unprocessed-payments-deadletter"}[2m])) > {{ .Values.alerts.AnyError.threshold }}
+          labels:
+            team: settlements
+            severity: error
+        - alert: UfxFileEventDlqAlert
+          annotations:
+            message: >-
+              UFX file DLQ has messages waiting to be dealt with
+          expr: |
+            sum by (service, namespace) (irate(aws_sqs_approximate_number_of_messages_visible_maximum{queue_name="settlements-payments-system-way4-ufx-file-events-deadletter"}[2m])) > {{ .Values.alerts.AnyError.threshold }}
+          labels:
+            team: settlements
+            severity: error
+        - alert: ProviderPaymentsProcessingDisabled
+          annotations:
+            message: >-
+              Payment processor feature flag disabled for payment provider
+          expr: |
+            sum by (service, namespace, payment_provider) (irate(app_settlements_provider_payments_processing_disabled{service="settlements-payments-system"}[2m])) > {{ .Values.alerts.AnyError.threshold }}
+          labels:
+            team: settlements
+            severity: error
+ {{- end }}

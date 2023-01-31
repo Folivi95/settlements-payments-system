@@ -1,0 +1,130 @@
+[
+  {
+    "currency": "AUD",
+    "isHighRisk": false,
+    "accountDetails": {
+      "iban": "DK7989009999910498",
+      "accountId": "74e265e2-3e8d-e091-2ff4-f49162fee38e"
+    }
+  },
+  {
+    "currency": "CAD",
+    "isHighRisk": false,
+    "accountDetails": {
+      "iban": "DK5289009999910499",
+      "accountId": "4ff4f40f-a8ba-f780-fddc-919df38026e6"
+    }
+  },
+  {
+    "currency": "CHF",
+    "isHighRisk": false,
+    "accountDetails": {
+      "iban": "DK2589009999910500",
+      "accountId": "ca913467-e994-4b9d-bb1c-669f1e0c7602"
+    }
+  },
+  {
+    "currency": "CZK",
+    "isHighRisk": false,
+    "accountDetails": {
+      "iban": "DK9589009999910501",
+      "accountId": "ecca4ddf-77d8-cab4-34ee-83881fc961e0"
+    }
+  },
+  {
+    "currency": "DKK",
+    "isHighRisk": false,
+    "accountDetails": {
+      "iban": "DK6889009999910502",
+      "accountId": "64879db2-d5d2-76a8-f677-87df4d6ebbe1"
+    }
+  },
+  {
+    "currency": "EUR",
+    "isHighRisk": false,
+    "accountDetails": {
+      "iban": "DK4189009999910503",
+      "accountId": "f5a95e79-1415-9216-e435-c0d2381ebe4a"
+    }
+  },
+  {
+    "currency": "EUR",
+    "isHighRisk": true,
+    "accountDetails": {
+      "iban": "DK4089009999910521",
+      "accountId": "21e4c815-278c-5cd8-f97d-2615db417ff2"
+    }
+  },
+  {
+    "currency": "GBP",
+    "isHighRisk": false,
+    "accountDetails": {
+      "iban": "DK1489009999910504",
+      "accountId": "6041a196-8c5b-7a58-1936-0b85d2abaf4e"
+    }
+  },
+  {
+    "currency": "GBP",
+    "isHighRisk": true,
+    "accountDetails": {
+      "iban": "DK1489009999910504",
+      "accountId": "6041a196-8c5b-7a58-1936-0b85d2abaf4e"
+    }
+  },
+  {
+    "currency": "HRK",
+    "isHighRisk": false,
+    "accountDetails": {
+      "iban": "DK8489009999910505",
+      "accountId": "0e89a45e-9c7a-19bf-8f85-2531395779f8"
+    }
+  },
+  {
+    "currency": "HUF",
+    "isHighRisk": false,
+    "accountDetails": {
+      "iban": "DK3089009999910507",
+      "accountId": "2af145ad-0c0e-3bac-8ae6-9bcee0c72e5e"
+    }
+  },
+  {
+    "currency": "NOK",
+    "isHighRisk": false,
+    "accountDetails": {
+      "iban": "DK1989009999910511",
+      "accountId": "9af74df0-0afa-5c94-6c7e-e14746138407"
+    }
+  },
+  {
+    "currency": "PLN",
+    "isHighRisk": false,
+    "accountDetails": {
+      "iban": "DK6289009999910513",
+      "accountId": "e887da41-7829-6776-bbec-25badb645e04"
+    }
+  },
+  {
+    "currency": "RON",
+    "isHighRisk": false,
+    "accountDetails": {
+      "iban": "DK3589009999910514",
+      "accountId": "18752399-8818-b6a5-cd19-af66d7f99bf4"
+    }
+  },
+  {
+    "currency": "SEK",
+    "isHighRisk": false,
+    "accountDetails": {
+      "iban": "DK7889009999910516",
+      "accountId": "a4701750-c1db-7eec-5814-2faf9603741c"
+    }
+  },
+  {
+    "currency": "USD",
+    "isHighRisk": false,
+    "accountDetails": {
+      "iban": "DK9489009999910519",
+      "accountId": "297f0646-a758-01ff-cb5a-02a1eeb02d01"
+    }
+  }
+]

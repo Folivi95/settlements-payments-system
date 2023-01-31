@@ -1,0 +1,149 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "settlements-payments-system.fullname" . }}
+  labels:
+    {{- include "settlements-payments-system.labels" . | nindent 4 }}
+spec:
+  {{- if .Values.deployment}}
+  replicas: {{ .Values.deployment.replicaCount }}
+  revisionHistoryLimit: {{ .Values.deployment.revisionHistoryLimit | default 1 }}
+  {{- end}}
+
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+
+  selector:
+    matchLabels:
+      {{- include "settlements-payments-system.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "settlements-payments-system.selectorLabels" . | nindent 8 }}
+    spec:
+      {{- with .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      serviceAccountName: {{ include "settlements-payments-system.serviceAccountName" . }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: {{ .Chart.Name }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          {{- if .Values.deployment}}
+          {{- if .Values.deployment.image }}
+          image: "{{ .Values.deployment.image.repository }}:{{ .Values.deployment.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.deployment.image.pullPolicy | default "IfNotPresent" }}
+          {{- end }}
+          {{- end }}
+          ports:
+            - name: http
+              containerPort: {{ .Values.service.port }}
+              protocol: TCP
+          livenessProbe:
+            httpGet:
+              path:  {{ .Values.service.health.live }}
+              port: http
+          readinessProbe:
+            httpGet:
+              path: {{ .Values.service.health.ready }}
+              port: http
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          env:
+            {{- if .Values.env }}
+            - name: ENV_NAME
+              value: "{{ .Values.env.environment }}"
+            {{- end}}
+            - name: DB_CONNECTION_STRING
+              valueFrom:
+                secretKeyRef:
+                  name: settlements-payments-system-db-cluster
+                  key: url
+            - name: BANKING_CIRCLE
+              valueFrom:
+                secretKeyRef:
+                  name: settlements-payments-system-banking-circle
+                  key: secretJSON
+            - name: UNLEASH_FEATURE_FLAGS
+              valueFrom:
+                secretKeyRef:
+                  name: settlements-payments-system-unleash-feature-flags
+                  key: secretJSON
+            - name: UNLEASH_FEATURE_FLAGS_ADMIN
+              valueFrom:
+                secretKeyRef:
+                  name: settlements-payments-system-unleash-feature-flags-admin
+                  key: secretJSON
+            - name: PAYMENTS_API_AUTHORISED_USERS
+              valueFrom:
+                secretKeyRef:
+                  name: settlements-payments-system-payments-api-authorised-users
+                  key: secretJSON
+            - name: KAFKA_ENDPOINT
+              valueFrom:
+                secretKeyRef:
+                  name: settlements-payments-system-msk-eventstreaming
+                  key: endpoint
+            - name: KAFKA_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: settlements-payments-system-msk-eventstreaming
+                  key: username
+            - name: KAFKA_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: settlements-payments-system-msk-eventstreaming
+                  key: password
+            - name: OTEL_EXPORTER_OTLP_ENDPOINT
+              value: "{{ .Values.otelExporterEndpoint }}"
+      {{- with .Values.nodeSelector }}
+      nodeSelector:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - podAffinityTerm:
+                labelSelector:
+                  matchExpressions:
+                    - key: app.kubernetes.io/name
+                      operator: In
+                      values:
+                        - {{ include "settlements-payments-system.fullname" . }}
+                topologyKey: topology.kubernetes.io/zone
+              weight: 100
+            - podAffinityTerm:
+                labelSelector:
+                  matchExpressions:
+                    - key: app.kubernetes.io/name
+                      operator: In
+                      values:
+                        - {{ include "settlements-payments-system.fullname" . }}
+                topologyKey: kubernetes.io/hostname
+              weight: 90
+      topologySpreadConstraints:
+        - maxSkew: 1
+          topologyKey: topology.kubernetes.io/zone
+          whenUnsatisfiable: ScheduleAnyway
+          labelSelector:
+            matchLabels:
+              app.kubernetes.io/name: {{ include "settlements-payments-system.fullname" . }}
+        - maxSkew: 1
+          topologyKey: kubernetes.io/hostname
+          whenUnsatisfiable: ScheduleAnyway
+          labelSelector:
+            matchLabels:
+              app.kubernetes.io/name: {{ include "settlements-payments-system.fullname" . }}
+      {{- with .Values.tolerations }}
+      tolerations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}

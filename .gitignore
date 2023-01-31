@@ -1,0 +1,9 @@
+.idea
+app
+main
+cmd/app/app
+settlements-payments-system
+vendor
+**/.env
+http-client.private.env.json
+.DS_Store

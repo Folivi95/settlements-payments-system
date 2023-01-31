@@ -1,0 +1,26 @@
+load("ext://helm_remote", "helm_remote")
+
+# exported resources names
+KAFKA_RESOURCES=["kafka", "kafka-zookeeper"]
+
+# Kafka; https://github.com/bitnami/charts/tree/master/bitnami/kafka
+helm_remote(
+    "kafka",
+    repo_name="bitnami",
+    repo_url="https://charts.bitnami.com/bitnami",
+    release_name="kafka",
+    set=[
+        "listeners[0]=INTERNAL://:9092",
+        "listeners[1]=CLIENT://localhost:9093",
+        "advertisedListeners[0]=INTERNAL://:9092",
+        "advertisedListeners[1]=CLIENT://localhost:9093",
+        "interBrokerListenerName=INTERNAL",
+        "deleteTopicEnable=true"
+    ],
+    version="16.2.13" # chart version
+)
+
+# deploying zookeeper & kafka
+k8s_resource("kafka", port_forwards='9093', labels=["dependencies"], resource_deps=["kafka-zookeeper"], trigger_mode=TRIGGER_MODE_MANUAL)
+k8s_resource("kafka-zookeeper", labels=["dependencies"], trigger_mode=TRIGGER_MODE_MANUAL)
+

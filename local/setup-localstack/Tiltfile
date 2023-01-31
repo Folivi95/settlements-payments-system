@@ -1,0 +1,9 @@
+load("../localstack/Tiltfile", "LOCALSTACK_RESOURCE")
+
+LOCALSTACK_JOB_RESOURCES = ["setup-local-aws"]
+
+local('go mod vendor', quiet=True, echo_off=True)
+
+docker_build("localhost:35000/setup-local-aws", ".")
+k8s_yaml("job.yaml")
+k8s_resource("setup-local-aws", labels=["jobs"], resource_deps=LOCALSTACK_RESOURCE)

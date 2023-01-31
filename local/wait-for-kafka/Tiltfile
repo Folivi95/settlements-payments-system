@@ -1,0 +1,7 @@
+load("../kafka/Tiltfile", "KAFKA_RESOURCES")
+
+KAFKA_JOB_RESOURCES = ["wait-for-kafka"]
+
+docker_build("localhost:35000/wait-for-kafka", ".")
+k8s_yaml("job.yaml")
+k8s_resource("wait-for-kafka", labels=["jobs"], resource_deps=KAFKA_RESOURCES)

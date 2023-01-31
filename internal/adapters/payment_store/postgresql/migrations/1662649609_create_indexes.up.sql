@@ -1,0 +1,3 @@
+CREATE INDEX IF NOT EXISTS payment_mid ON payment_instructions USING btree (((body->'incomingInstruction'->'merchant'->>'contractNumber')));
+CREATE INDEX IF NOT EXISTS payment_account_number on payment_instructions using btree ((body->'incomingInstruction'->'merchant'->'account'->>'accountNumber'));
+CREATE INDEX IF NOT EXISTS payment_correlation_id on payment_instructions using btree ((body->'incomingInstruction'->>'paymentCorrelationId'));

@@ -1,0 +1,132 @@
+### Get payment status report in production
+https://{{host}}/payments/report
+Authorization: Bearer {{bearer}}
+
+### Get a payment instruction by id
+https://{{host}}/payments/26b7323e-1b82-4bc1-bf03-2cb0bab5a766
+Authorization: Bearer {{bearer}}
+
+### Get payment status report in production for a day /yyyy-mm-dd
+https://{{host}}/payments/report/2022-02-01
+Authorization: Bearer {{bearer}}
+
+### Get Rejection Report from Banking Circle
+### Returns todays report by default
+### To return a report for a specific date, add date /yyyy-mm-dd
+https://{{host}}/bc-report
+Authorization: Bearer {{bearer}}
+
+### Download todays main UFX file
+https://{{host}}/internal/ufx-file/main
+Authorization: Bearer {{bearer}}
+
+### Download high-risk UFX file from day /yyyy-mm-dd
+https://{{host}}/internal/ufx-file/high-risk/2022-01-26
+Authorization: Bearer {{bearer}}
+
+### Download specified UFX File BORGUN_yyyymmdd
+### This will return an URL that you can use with wget or curl like this:
+### `wget -O filename.xml https://s3.eu-west-1.amazonaws.com/...`
+### `curl https://s3.eu-west-1.amazonaws.com/... > filename.xml`
+https://{{host}}/internal/ufx-file/OIC_Documents_SAXO_BORGUN_20220124_1.xml
+Authorization: Bearer {{bearer}}
+
+### DLQ information:
+https://{{host}}/internal/dead-letter-queues
+Authorization: Bearer {{bearer}}
+
+### Get messages from dead-letter queues
+### Get unprocessed messages from queue
+https://{{host}}/internal/dead-letter-queues/bc-unprocessed-dlq
+Authorization: Bearer {{bearer}}
+
+### Get unchecked messages from queue
+https://{{host}}/internal/dead-letter-queues/unchecked-dlq
+Authorization: Bearer {{bearer}}
+
+### Get ufx messages from queue
+https://{{host}}/internal/dead-letter-queues/ufx-dlq
+Authorization: Bearer {{bearer}}
+
+### Get processed messages from queue
+https://{{host}}/internal/dead-letter-queues/processed-dlq
+Authorization: Bearer {{bearer}}
+
+### Purge messages from dead-letter queues
+### Purge unprocessed messages from queue (add purge to the action)
+### !Warning! This endpoint can have a irreversible impact
+POST https://{{host}}/internal/queues/bc-unprocessed?action=REPLACE_ME
+Authorization: Bearer {{bearer}}
+
+### Purge unchecked messages from queue (add purge to the action)
+### !Warning! This endpoint can have a irreversible impact
+POST https://{{host}}/internal/queues/unchecked?action=REPLACE_ME
+Authorization: Bearer {{bearer}}
+
+### Purge ufx messages from queue (add purge to the action)
+### !Warning! This endpoint can have a irreversible impact
+POST https://{{host}}/internal/queues/ufx?action=REPLACE_M
+Authorization: Bearer {{bearer}}
+
+### Purge processed messages from queue (add purge to the action)
+### !Warning! This endpoint can have a irreversible impact
+POST https://{{host}}/internal/queues/processed?action=REPLACE_ME
+Authorization: Bearer {{bearer}}
+
+### Get queue attributes
+### Get unprocessed Banking Circle queue attributes
+### Or Use isb-unprocessed to get Íslandsbanki
+https://{{host}}/internal/queues/bc-unprocessed/attributes
+Authorization: Bearer {{bearer}}
+
+### Get unprocessed-dlq Banking Circle queue attributes
+### Or Use isb-unprocessed-dlq to get Íslandsbanki
+https://{{host}}/internal/queues/bc-unprocessed-dlq/attributes
+Authorization: Bearer {{bearer}}
+
+### Get unchecked queue attributes
+https://{{host}}/internal/queues/unchecked/attributes
+Authorization: Bearer {{bearer}}
+
+### Get unchecked-dlq queue attributes
+https://{{host}}/internal/queues/unchecked-dlq/attributes
+Authorization: Bearer {{bearer}}
+
+### Get ufx queue attributes
+https://{{host}}/internal/queues/ufx/attributes
+Authorization: Bearer {{bearer}}
+
+### Get ufx queue attributes
+https://{{host}}/internal/queues/ufx-dlq/attributes
+Authorization: Bearer {{bearer}}
+
+### Get processed queue attributes
+https://{{host}}/internal/queues/processed/attributes
+Authorization: Bearer {{bearer}}
+
+### Get processed-dlq queue attributes
+https://{{host}}/internal/queues/processed-dlq/attributes
+Authorization: Bearer {{bearer}}
+
+### Get prometheus metrics
+https://{{host}}/metrics
+
+### Get currencies report
+https://{{host}}/payments/currencies-report
+Authorization: Bearer {{bearer}}
+
+### Get currencies report for a given day /yyyy-mm-dd
+https://{{host}}/payments/currencies-report/2022-01-26
+Authorization: Bearer {{bearer}}
+
+### Get payment given a mid and date /{mid}/yyyy-mm-dd
+https://{{host}}/mid/123/2022-01-25
+Authorization: Bearer {{bearer}}
+
+### Replay payments for a particular currency (used after recovery from an insufficient funds situation)
+### !! Use it only when you are sure, that the payments originally did NOT go through. CHECK Banking UI!
+POST https://{{host}}/replay-payment?action=pay_currency_from_file&currency=EUR&file=test-ufx.xml
+Authorization: Bearer {{bearer}}
+
+### Get settlments team members
+https://{{host}}/internal/team

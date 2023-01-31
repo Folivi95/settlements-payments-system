@@ -1,0 +1,5 @@
+#!/bin/sh
+set -e
+
+# if your trunk/default git branch is something other than `main`, change it below
+chartversion validate --remote=$1 --trunk=main
